@@ -97,4 +97,18 @@ void runMenu(const struct menuDefinition *menuDef);
 
 void refreshMenu();
 
+struct menuGlobals {
+    uint8_t menuOpen;
+    uint8_t editOpen;
+    uint8_t selectIndex;
+    uint8_t menuItemCount;
+    uint8_t ItemOffsets[MAXMENUITEMS];
+    uint8_t selectIndexToMD[MAXMENUITEMS];
+    int32_t ItemValues[MAXMENUITEMS];
+    uint8_t ItemLoaded[MAXMENUITEMS];
+    const struct menuDefinition *MD;
+};
+
+struct menuGlobals *mg;
+
 #endif
