@@ -45,10 +45,29 @@ void clearShot(shot *s) {
     s->y = -1;
     s->lastAnimStep = 0;
 }
+void win(){
+  Display_Clear();
+  Display_SetInverted(true);
+  siprintf(buff, "Winner!");
+  Display_PutText(0, 50, buff, FONT_DEJAVU_8PT);
+  Display_Update();
 
+  uint32_t now = uptime;
+  while (now + 500 > uptime) {
+      // wait
+  }
+  Display_SetInverted(false);
+  Display_Update();
+  while (now + 500 > uptime) {
+      // wait
+  }
+  Display_Clear();
+}
 void setLevel(int newLevel) {
-    if (newLevel >= gg.levelCount)
+    if (newLevel >= gg.levelCount){
+        win();
         return;
+      }
 
     __init = gg.levels[newLevel]->init;
     __draw = gg.levels[newLevel]->draw;
