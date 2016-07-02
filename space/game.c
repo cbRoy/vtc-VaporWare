@@ -122,6 +122,28 @@ int progress() {
     return 0;
 }
 
+void win(){
+  Display_Clear();
+  Display_SetInverted(true);
+  siprintf(buff, "Winner!");
+  Display_PutText(0, 50, buff, FONT_DEJAVU_8PT);
+  Display_Update();
+
+  uint32_t now = uptime;
+  while (now + 500 > uptime) {
+      // wait
+  }
+  Display_SetInverted(false);
+  Display_Update();
+  while (now + 1000 > uptime) {
+      // wait
+  }
+  Display_Clear();
+  gv.spacinVaper = 0;
+  returnHandler();
+  return;
+}
+
 void runSpace() {
     switchHandler(&gameHandler);
 
@@ -151,6 +173,11 @@ void runSpace() {
         }
         if (gg.levels[currentLevel]->aliveAliens == 0) {
             setLevel(++currentLevel);
+        }
+
+        if(currentLevel >= gg.levelCount){
+          win();
+          return;
         }
 
         if (gv.buttonEvent) {
