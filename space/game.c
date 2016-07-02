@@ -11,8 +11,8 @@
 
 #define HEADER_HEIGHT 12
 
-int8_t currentLevel;
-uint32_t lastFireTime;
+volatile int8_t currentLevel;
+volatile uint32_t lastFireTime;
 
 /**
  * return next available shot slot
@@ -87,6 +87,13 @@ struct buttonHandler gameHandler = {
 
 char buff[63];
 
+void wait(uint16_t time){
+  uint32_t now = uptime;
+  while (now + time > uptime) {
+      // wait
+  }
+}
+
 void draw() {
     Display_Clear();
 
@@ -122,27 +129,22 @@ int progress() {
     return 0;
 }
 
-void win(){
+void end(char* text){
+  char buff[63];
+  siprintf(buff,text);
   Display_Clear();
   Display_SetInverted(true);
-  siprintf(buff, "Winner!");
   Display_PutText(0, 50, buff, FONT_DEJAVU_8PT);
   Display_Update();
-
-  uint32_t now = uptime;
-  while (now + 500 > uptime) {
-      // wait
-  }
+  wait(500);
   Display_SetInverted(false);
   Display_Update();
-  while (now + 1000 > uptime) {
-      // wait
-  }
+  wait(500);
   Display_Clear();
   gv.spacinVaper = 0;
   returnHandler();
-  return;
 }
+
 
 void runSpace() {
     switchHandler(&gameHandler);
@@ -150,33 +152,24 @@ void runSpace() {
     // set ship loc
     gg.shipCoords[0] = (DISPLAY_WIDTH / 2) - (Bitmap_ship_width / 2);
     gg.shipCoords[1] = DISPLAY_HEIGHT - Bitmap_ship_height - 4 /* some padding */;
-
+    gg.playerHealth = gg.maxPlayerHealth;
+    gg.userScore = 0;	
     setLevel(currentLevel = 1);
     progress();
     draw();
 
     while (1) {
         if (gg.playerHealth == 0) {
-            Display_Clear();
-            Display_PutText(0, 50, "GameOver", FONT_DEJAVU_8PT);
-            Display_Update();
-
-            uint32_t sleep = uptime + 1000;
-            while (sleep > uptime) {
-                // wait
-            }
-
-            Display_Clear();
-            gv.spacinVaper = 0;
-            returnHandler();
+            end("Gameover!");
             return;
         }
+
         if (gg.levels[currentLevel]->aliveAliens == 0) {
             setLevel(++currentLevel);
         }
 
         if(currentLevel >= gg.levelCount){
-          win();
+          end("Winner!");
           return;
         }
 
@@ -184,8 +177,6 @@ void runSpace() {
             handleButtonEvents();
             gv.buttonEvent = 0;
         }
-
-
         progress();
         draw();
     }
