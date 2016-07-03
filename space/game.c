@@ -85,8 +85,6 @@ struct buttonHandler gameHandler = {
 
 };
 
-char buff[63];
-
 void wait(uint16_t time){
   uint32_t now = uptime;
   while (now + time > uptime) {
@@ -98,6 +96,7 @@ void draw() {
     Display_Clear();
 
     // draw header
+    char buff[63];
     siprintf(buff, "Score:%d", gg.userScore);
     Display_PutText(0, 0, buff, FONT_DEJAVU_8PT);
 
@@ -153,7 +152,7 @@ void runSpace() {
     gg.shipCoords[0] = (DISPLAY_WIDTH / 2) - (Bitmap_ship_width / 2);
     gg.shipCoords[1] = DISPLAY_HEIGHT - Bitmap_ship_height - 4 /* some padding */;
     gg.playerHealth = gg.maxPlayerHealth;
-    gg.userScore = 0;	
+    gg.userScore = 0;
     setLevel(currentLevel = 1);
     progress();
     draw();
