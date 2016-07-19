@@ -12,7 +12,6 @@ static inline void writeUsb(const char *format, ...) {
     char buff[63] = {0};
     vsiprintf(buff, format, args);
     USB_VirtualCOM_SendString(buff);
-
     va_end(args);
 }
 

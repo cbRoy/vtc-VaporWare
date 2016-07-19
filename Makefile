@@ -3,12 +3,15 @@ TARGET = atomizer
 #ISDEV := "Yes, damange my device"
 GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 #ATY_DEBUG := 1
+#SHOWOVERFLOW := 1
 
 CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -Iinclude/
 CFLAGS += -Ispace/include/
+CFLAGS += -Ivapeout/include/
 CFLAGS += -I.
 CFLAGS += -Werror
+#CFLAGS += -Wpedantic
 
 OBJS = \
     src/globals.o \
@@ -40,6 +43,7 @@ OBJS = \
     space/levels/level1.o \
     space/levels/level2.o \
     space/game.o \
+		vapeout/vapeout.o \
     src/main.o
 
 ifeq ($(ISDEV),"Yes, damange my device")

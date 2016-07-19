@@ -44,6 +44,9 @@
 #include "font/font_vaporware.h"
 #include "variabletimer.h"
 
+#include "vapeout.h"
+//#include "vapeout/include/vapeout.h"
+
 void saveDefaultSettings();
 
 #define MAXOPTIONS 16
@@ -161,6 +164,10 @@ void spacinVaper(void) {
     Display_SetOn(1);
     gv.spacinVaper = 1;
     mg->menuOpen = 0;
+}
+
+void launchVapeout(void){
+  runVapeout();
 }
 
 const struct menuDefinition *const showModeSettings(const struct menuItem *MI) {
@@ -535,6 +542,11 @@ const struct menuItem settingsMenuItems[] = {
         .type = ACTION,
         .label = "Space",
         .Item.action.actionCallback = &spacinVaper,
+    },
+    {
+        .type = ACTION,
+        .label ="Vapeout",
+        .Item.action.actionCallback = &launchVapeout,
     },
     {
         .type = STARTBOTTOM,
