@@ -46,7 +46,6 @@
 
 #include "vaptris.h"
 #include "vapeout.h"
-//#include "vapeout/include/vapeout.h"
 
 void saveDefaultSettings();
 
