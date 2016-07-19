@@ -45,6 +45,8 @@
 #include "variabletimer.h"
 
 #include "vaptris.h"
+#include "vapeout.h"
+//#include "vapeout/include/vapeout.h"
 
 void saveDefaultSettings();
 
@@ -170,6 +172,10 @@ void spacinVaper(void) {
 
 void runVaptris(void) {
     runvaptris();
+}
+
+void launchVapeout(void){
+  runVapeout();
 }
 
 const struct menuDefinition *const showModeSettings(const struct menuItem *MI) {
@@ -568,8 +574,13 @@ const struct menuItem settingsMenuItems[] = {
     },
     {
         .type = ACTION,
+<<<<<<< HEAD
         .label ="Vaptris",
         .Item.action.actionCallback = &runVaptris,
+=======
+        .label ="Vapeout",
+        .Item.action.actionCallback = &launchVapeout,
+>>>>>>> f1b1bf2... first add of VapeOut
     },
     {
         .type = STARTBOTTOM,

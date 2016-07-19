@@ -9,6 +9,7 @@ CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -Iinclude/
 CFLAGS += -Ispace/include/
 CFLAGS += -Ivaptris/include/
+CFLAGS += -Ivapeout/include/
 CFLAGS += -I.
 CFLAGS += -Werror
 CFLAGS += -Wpedantic
@@ -52,7 +53,11 @@ OBJS = \
     space/levels/level1.o \
     space/levels/level2.o \
     space/game.o \
+<<<<<<< HEAD
     vaptris/vaptris.o \
+=======
+		vapeout/vapeout.o \
+>>>>>>> f1b1bf2... first add of VapeOut
     src/main.o
 
 ifeq ($(ISDEV),"Yes, damange my device")

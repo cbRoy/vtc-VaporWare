@@ -13,7 +13,6 @@ static inline void writeUsb(const char *format, ...) {
     vasiprintf(&buff,format, args);
     USB_VirtualCOM_SendString(buff);
     free(buff);
-
     va_end(args);
 }
 
