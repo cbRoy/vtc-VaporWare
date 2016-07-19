@@ -574,13 +574,13 @@ const struct menuItem settingsMenuItems[] = {
     },
     {
         .type = ACTION,
-<<<<<<< HEAD
         .label ="Vaptris",
         .Item.action.actionCallback = &runVaptris,
-=======
+    },
+    {
+        .type = ACTION,
         .label ="Vapeout",
         .Item.action.actionCallback = &launchVapeout,
->>>>>>> f1b1bf2... first add of VapeOut
     },
     {
         .type = STARTBOTTOM,
