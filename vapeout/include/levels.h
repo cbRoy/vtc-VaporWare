@@ -1,5 +1,5 @@
 #ifndef VAPEOUT_LEVELS_H
-#define VAPEOUT_LEVEL_H
+#define VAPEOUT_LEVELS_H
 
 #include <stdlib.h>
 
