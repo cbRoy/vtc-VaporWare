@@ -44,8 +44,8 @@
 #include "font/font_vaporware.h"
 #include "variabletimer.h"
 
-#include "vapeout.h"
-//#include "vapeout/include/vapeout.h"
+//#include "vapeout.h"
+#include "vapeout/include/vapeout.h"
 
 void saveDefaultSettings();
 
