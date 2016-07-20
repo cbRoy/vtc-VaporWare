@@ -13,11 +13,11 @@
 
 #include "levels.h"
 
-// 1111
-// 1111
-uint8_t brick[] = {0x03,0x03,0x03,0x03};
+// 1111111
+// 1111111
+uint8_t brick[] = {0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03};
 uint8_t brickHeight = 2;
-uint8_t brickWidth = 4;
+uint8_t brickWidth = 7;
 
 // 11
 // 11
@@ -25,11 +25,11 @@ uint8_t ball[] = {0x03,0x03};
 uint8_t ballHeight = 2;
 uint8_t ballWidth = 2;
 
-// 11111111
-// 11111111
-uint8_t paddle[] ={0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03};
+// 1111111111
+// 1111111111
+uint8_t paddle[] = {0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03};
 uint8_t  paddleHeight = 2;
-uint8_t  paddleWidth = 8;
+uint8_t  paddleWidth = 10;
 
 
 struct gameState {
@@ -38,6 +38,9 @@ struct gameState {
     uint8_t ballcurX;
     uint8_t ballcurY;
     uint8_t ballDirection;
+    uint8_t ballMagnitude;
+    uint8_t ballVelocityX;
+    uint8_t ballVelocityY;
     uint16_t delay;
     uint8_t level;
     uint32_t score;
@@ -46,34 +49,49 @@ struct gameState {
 };
 
 struct gameState vapeoutState = {
-    .paddlecurX = 2,
-    .paddlecurY = 20,
-    .ballcurX = 98,
-    .ballcurY = 30,
-    .ballDirection = 1,
     .delay = 100,
     .level = 1,
     .score = 0,
     .quit = 0
 };
 
-int checkPaddleColission(){
-    return 0;
+void initVapeout(){
+  vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
+  vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
+  vapeoutState.ballcurX = (DISPLAY_WIDTH - ballWidth) / 2;
+  vapeoutState.ballcurY = vapeoutState.paddlecurY - ballHeight;
+  vapeoutState.ballDirection = (rand()%2) * 2 - 1;
+  vapeoutState.ballMagnitude = (drand48()+1)/50;
+  vapeoutState.ballVelocityX = vapeoutState.ballDirection * vapeoutState.ballMagnitude;
+  vapeoutState.ballVelocityY = 0.5;
 }
 
 void paddleMoveLeft(uint8_t status, uint32_t held) {
-    if ((status & (BUTTON_PRESS | BUTTON_HELD))) {
-        vapeoutState.paddlecurY--;
-        if (checkPaddleColission())
-            vapeoutState.paddlecurY++;
+  int amount = 0;
+  if ((status & BUTTON_PRESS) && (held < 300)) {
+      amount = 4;
+  } else if ((held > 300) && status & BUTTON_HELD) {
+      amount = 2;
+  }
+  if(amount > 0){
+    if(vapeoutState.paddlecurX - amount >= 0){
+      vapeoutState.paddlecurX -= amount;
     }
+  }
 }
 
 void paddleMoveRight(uint8_t status, uint32_t held) {
-    if ((status & (BUTTON_PRESS))) {
-        vapeoutState.paddlecurY++;
-        if (checkPaddleColission())
-            vapeoutState.paddlecurY--;
+    int amount = 0;
+    if ((status & BUTTON_PRESS) && (held < 300)) {
+        amount = 4;
+    } else if ((held > 300) && status & BUTTON_HELD) {
+        amount = 2;
+    }
+    if (amount > 0) {
+        // check bounds
+        if ((vapeoutState.paddlecurX + amount) < (DISPLAY_WIDTH - paddleWidth)) {
+            vapeoutState.paddlecurX += amount;
+        }
     }
 }
 
@@ -85,28 +103,28 @@ void vapeoutLaunch(uint8_t status, uint32_t held) {
 
 struct buttonHandler vapeoutHandler = {
         .name = "mainButtons",
-        .flags = FIRE_HOLD_EVENT,
+        .flags = LEFT_HOLD_EVENT | RIGHT_HOLD_EVENT,
 
         .fire_handler = &vapeoutLaunch,
         .fireUpdateInterval = 150,
 
         .left_handler = &paddleMoveLeft,
-        .leftUpdateInterval = 150,
-
+        .leftUpdateInterval = 50,
 
         .right_handler = &paddleMoveRight,
-        .rightUpdateInterval = 150,
+        .rightUpdateInterval = 50,
 
 };
 
 void drawBricks(struct levelDesc *lvl){
-  Display_Clear();
-  int i, j;
-  int x=2, y=3;
-  for(i = 0; i < lvl->height; i++){
-    x=2;
-    for(j = 0; j < lvl->width; j++){
-        if(lvl->layout[(i*lvl->width)+j] == 1){
+  int row, col;
+  uint8_t mask;
+  int x=1, y=3;
+  for(row = 0; row < lvl->height; row++){
+    x=1;
+    mask = lvl->layout[row];
+    for(col = 0; col < lvl->width; col++){
+        if(mask & ( 1 << (7 - col))){
             Display_PutPixels(x,y,brick,brickWidth,brickHeight);
         }
         x+=brickWidth+1;
@@ -116,14 +134,17 @@ void drawBricks(struct levelDesc *lvl){
 }
 
 void checkBallColission(struct levelDesc *lvl){
-  int i, j;
+  int row, col;
   int x=2, y=3;
-  for(i = 0; i < lvl->height; i++){
+  uint8_t mask;
+  for(row = 0; row < lvl->height; row++){
     x=2;
-    for(j = 0; j < lvl->width; j++){
-        if(lvl->layout[(i*lvl->width)+j] == 1){
+    mask = lvl->layout[row];
+    for(col = 0; col < lvl->width; col++){
+        if(mask & ( 1 << (7 - col))){
             if(vapeoutState.ballcurX == x && vapeoutState.ballcurY == y){
-                lvl->layout[(i*lvl->width)+j] = 0;
+                //lvl->layout[(i*lvl->width)+j] = 0;
+                // how to change the value to show ball hit?
                 //reverse ball direction
             }
         }
@@ -135,18 +156,18 @@ void checkBallColission(struct levelDesc *lvl){
 
 void drawPaddle(){
     Display_PutPixels(vapeoutState.paddlecurX, vapeoutState.paddlecurY, paddle, paddleWidth, paddleHeight);
-
 }
 
 void drawBall(){
-    //Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurX, ball, ballWidth, ballHeight);
+    Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
 }
 
 void runVapeout(){
     switchHandler(&vapeoutHandler);
+    initVapeout();
 
     while(1){
-      //setupScreen();
+      setupScreen();
 
       if (gv.buttonEvent) {
           handleButtonEvents();
