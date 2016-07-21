@@ -34,8 +34,8 @@ uint8_t  paddleWidth = 10;
 struct gameState {
     uint8_t paddlecurX;
     uint8_t paddlecurY;
-    uint8_t ballcurX;
-    uint8_t ballcurY;
+    double ballcurX;
+    double ballcurY;
     uint8_t ballDirection;
     double ballMagnitude;
     double ballVelocityX;
@@ -43,32 +43,40 @@ struct gameState {
     uint16_t delay;
     levelDesc levels[MAXLEVELS];
     uint8_t currentLevel;
+    uint8_t playing;
     uint32_t score;
     uint8_t quit;
 
 };
 
-struct gameState vapeoutState = {
-    .delay = 100,
-    .currentLevel = 0,
-    .score = 0,
-    .quit = 0
-};
+struct gameState vapeoutState = { 0 };
 
 void initLevels(){
   vapeoutState.levels[0] = level1Desc;
   vapeoutState.levels[1] = level2Desc;
 }
-void initVapeout(){
-  initLevels();
-  vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
-  vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
-  vapeoutState.ballcurX = (DISPLAY_WIDTH - ballWidth) / 2;
+
+void resetBall(){
+  vapeoutState.ballcurX = vapeoutState.paddlecurX + (paddleWidth / 2) - (ballWidth / 2);
   vapeoutState.ballcurY = vapeoutState.paddlecurY - ballHeight;
   vapeoutState.ballDirection = (rand()%2) * 2 - 1;
-  vapeoutState.ballMagnitude = (drand48()+1)/50;
+  vapeoutState.ballMagnitude = (drand48()+1);
   vapeoutState.ballVelocityX = 1;//vapeoutState.ballDirection * vapeoutState.ballMagnitude;
   vapeoutState.ballVelocityY = -1;//0.5;
+}
+
+void initVapeout(){
+  vapeoutState.delay = 100;
+  vapeoutState.playing = 0;
+  vapeoutState.currentLevel = 0;
+  vapeoutState.score = 0;
+  vapeoutState.quit = 0;
+
+  vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
+  vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
+
+  resetBall();
+  initLevels();
 }
 
 void paddleMoveLeft(uint8_t status, uint32_t held) {
@@ -101,6 +109,9 @@ void paddleMoveRight(uint8_t status, uint32_t held) {
 }
 
 void vapeoutLaunch(uint8_t status, uint32_t held) {
+    if (status & BUTTON_PRESS && held < 300 && !vapeoutState.playing){
+      vapeoutState.playing = 1;
+    }
     if (status & BUTTON_HELD && held > 3000) {
         vapeoutState.quit = 1;
     }
@@ -149,14 +160,19 @@ void moveBall(){
   if(vapeoutState.ballcurX > (DISPLAY_WIDTH -2) || vapeoutState.ballcurX < 1){
     vapeoutState.ballVelocityX *= -1;
   }
-  if(vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
+  if((vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
      vapeoutState.ballcurX <= (vapeoutState.paddlecurX + paddleWidth) &&
-     vapeoutState.ballcurY == vapeoutState.paddlecurY){
+     vapeoutState.ballcurY == vapeoutState.paddlecurY) ||
+     vapeoutState.ballcurY <= 0){
        vapeoutState.ballVelocityY *= -1;
      }
+  if(vapeoutState.ballcurY > vapeoutState.paddlecurY){
+    resetBall();
+    vapeoutState.playing = 0;
+  }
 
 }
-void checkBallColission(struct levelDesc *lvl){
+void checkBrickColission(struct levelDesc *lvl){
   int row, col;
   int x=2, y=3;
   uint8_t mask;
@@ -168,7 +184,7 @@ void checkBallColission(struct levelDesc *lvl){
             if(vapeoutState.ballcurX >= x &&
                vapeoutState.ballcurX <= x + brickWidth &&
                vapeoutState.ballcurY == y){
-                lvl->layout[row] = mask & ~(1 << (7 - col));
+                lvl->layout[row] = mask & ~(1 << ((lvl->width - 1) - col));
                 //reverse ball direction
                 vapeoutState.ballVelocityY *= -1;
             }
@@ -184,7 +200,8 @@ void drawPaddle(){
 }
 
 void drawBall(){
-    Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
+  if(!vapeoutState.playing) resetBall();
+  Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
 }
 
 void runVapeout(){
@@ -204,11 +221,13 @@ void runVapeout(){
       }
 
       //drawScreen();
+      drawBricks(&level1Desc);
       drawPaddle();
       drawBall();
-      drawBricks(&level1Desc);
-      moveBall();
-      checkBallColission(&level1Desc);
+      if(vapeoutState.playing){
+        moveBall();
+        checkBrickColission(&level1Desc);
+      }
       Display_Update();
     }
 gameover:
