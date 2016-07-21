@@ -67,8 +67,8 @@ void initVapeout(){
   vapeoutState.ballcurY = vapeoutState.paddlecurY - ballHeight;
   vapeoutState.ballDirection = (rand()%2) * 2 - 1;
   vapeoutState.ballMagnitude = (drand48()+1)/50;
-  vapeoutState.ballVelocityX = vapeoutState.ballDirection * vapeoutState.ballMagnitude;
-  vapeoutState.ballVelocityY = 0.5;
+  vapeoutState.ballVelocityX = 1;//vapeoutState.ballDirection * vapeoutState.ballMagnitude;
+  vapeoutState.ballVelocityY = -1;//0.5;
 }
 
 void paddleMoveLeft(uint8_t status, uint32_t held) {
@@ -138,6 +138,24 @@ void drawBricks(struct levelDesc *lvl){
   }
 }
 
+void reverseDirection(double *velocity){
+    *velocity *= -1;
+    return;
+}
+void moveBall(){
+  vapeoutState.ballcurX += vapeoutState.ballVelocityX;
+  vapeoutState.ballcurY += vapeoutState.ballVelocityY;
+
+  if(vapeoutState.ballcurX > (DISPLAY_WIDTH -2) || vapeoutState.ballcurX < 1){
+    vapeoutState.ballVelocityX *= -1;
+  }
+  if(vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
+     vapeoutState.ballcurX <= (vapeoutState.paddlecurX + paddleWidth) &&
+     vapeoutState.ballcurY == vapeoutState.paddlecurY){
+       vapeoutState.ballVelocityY *= -1;
+     }
+
+}
 void checkBallColission(struct levelDesc *lvl){
   int row, col;
   int x=2, y=3;
@@ -147,10 +165,12 @@ void checkBallColission(struct levelDesc *lvl){
     mask = lvl->layout[row];
     for(col = 0; col < lvl->width; col++){
         if(mask & ( 1 << (7 - col))){
-            if(vapeoutState.ballcurX == x && vapeoutState.ballcurY == y){
-                //lvl->layout[(i*lvl->width)+j] = 0;
-                // how to change the value to show ball hit?
+            if(vapeoutState.ballcurX >= x &&
+               vapeoutState.ballcurX <= x + brickWidth &&
+               vapeoutState.ballcurY == y){
+                lvl->layout[row] = mask & ~(1 << (7 - col));
                 //reverse ball direction
+                vapeoutState.ballVelocityY *= -1;
             }
         }
         x+=brickWidth+1;
@@ -184,10 +204,11 @@ void runVapeout(){
       }
 
       //drawScreen();
-      checkBallColission(&level1Desc);
       drawPaddle();
       drawBall();
       drawBricks(&level1Desc);
+      moveBall();
+      checkBallColission(&level1Desc);
       Display_Update();
     }
 gameover:
