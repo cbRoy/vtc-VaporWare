@@ -7,7 +7,7 @@
 
 #include "button.h"
 #include "display.h"
-//#include "drawables.h"
+#include "drawables.h"
 #include "variabletimer.h"
 #include "debug.h"
 
@@ -31,18 +31,18 @@ uint8_t paddle[] = {0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03};
 uint8_t  paddleHeight = 2;
 uint8_t  paddleWidth = 10;
 
-
 struct gameState {
     uint8_t paddlecurX;
     uint8_t paddlecurY;
     uint8_t ballcurX;
     uint8_t ballcurY;
     uint8_t ballDirection;
-    uint8_t ballMagnitude;
-    uint8_t ballVelocityX;
-    uint8_t ballVelocityY;
+    double ballMagnitude;
+    double ballVelocityX;
+    double ballVelocityY;
     uint16_t delay;
-    uint8_t level;
+    levelDesc levels[MAXLEVELS];
+    uint8_t currentLevel;
     uint32_t score;
     uint8_t quit;
 
@@ -50,12 +50,17 @@ struct gameState {
 
 struct gameState vapeoutState = {
     .delay = 100,
-    .level = 1,
+    .currentLevel = 0,
     .score = 0,
     .quit = 0
 };
 
+void initLevels(){
+  vapeoutState.levels[0] = level1Desc;
+  vapeoutState.levels[1] = level2Desc;
+}
 void initVapeout(){
+  initLevels();
   vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
   vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
   vapeoutState.ballcurX = (DISPLAY_WIDTH - ballWidth) / 2;
@@ -103,7 +108,7 @@ void vapeoutLaunch(uint8_t status, uint32_t held) {
 
 struct buttonHandler vapeoutHandler = {
         .name = "mainButtons",
-        .flags = LEFT_HOLD_EVENT | RIGHT_HOLD_EVENT,
+        .flags = LEFT_HOLD_EVENT | RIGHT_HOLD_EVENT | FIRE_HOLD_EVENT,
 
         .fire_handler = &vapeoutLaunch,
         .fireUpdateInterval = 150,
