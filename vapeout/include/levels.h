@@ -4,17 +4,19 @@
 #include <stdint.h>
 
 #define MAXROWS 5
-#define MAXLEVELS 3
+#define MAXLEVELS 2
 
 typedef struct levelDesc {
     uint8_t width;
     uint8_t height;
+    uint8_t bricks;
     uint8_t layout[MAXROWS];
 } levelDesc;
 
 struct levelDesc level1Desc = {
      .width = 8,
      .height = 3,
+     .bricks = 24,
      .layout = { 0xFF, 0xFF, 0xFF }
      // 11111111
      // 11111111
@@ -24,6 +26,7 @@ struct levelDesc level1Desc = {
 struct levelDesc level2Desc = {
   .width = 8,
   .height = 4,
+  .bricks = 20,
   .layout = { 0xFF, 0x7E, 0x3c, 0x18 }
   // 11111111
   //  111111

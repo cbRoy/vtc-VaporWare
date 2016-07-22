@@ -43,6 +43,7 @@ struct gameState {
     uint16_t delay;
     levelDesc levels[MAXLEVELS];
     uint8_t currentLevel;
+    uint8_t bricksLeft;
     uint8_t playing;
     uint32_t score;
     uint8_t quit;
@@ -66,6 +67,10 @@ void resetBall(){
 }
 
 void initVapeout(){
+  initLevels();
+
+  vapeoutState.currentLevel = 0;
+  vapeoutState.bricksLeft = vapeoutState.levels[0].bricks;
   vapeoutState.delay = 100;
   vapeoutState.playing = 0;
   vapeoutState.currentLevel = 0;
@@ -76,7 +81,6 @@ void initVapeout(){
   vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
 
   resetBall();
-  initLevels();
 }
 
 void paddleMoveLeft(uint8_t status, uint32_t held) {
@@ -149,27 +153,25 @@ void drawBricks(struct levelDesc *lvl){
   }
 }
 
-void reverseDirection(double *velocity){
-    *velocity *= -1;
-    return;
-}
 void moveBall(){
-  vapeoutState.ballcurX += vapeoutState.ballVelocityX;
-  vapeoutState.ballcurY += vapeoutState.ballVelocityY;
 
   if(vapeoutState.ballcurX > (DISPLAY_WIDTH -2) || vapeoutState.ballcurX < 1){
     vapeoutState.ballVelocityX *= -1;
   }
   if((vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
-     vapeoutState.ballcurX <= (vapeoutState.paddlecurX + paddleWidth) &&
-     vapeoutState.ballcurY == vapeoutState.paddlecurY) ||
-     vapeoutState.ballcurY <= 0){
-       vapeoutState.ballVelocityY *= -1;
-     }
+      vapeoutState.ballcurX <= vapeoutState.paddlecurX + paddleWidth &&
+      vapeoutState.ballcurY >= vapeoutState.paddlecurY &&
+      vapeoutState.ballcurY <= vapeoutState.paddlecurY + paddleHeight) ||
+      vapeoutState.ballcurY <= 0){
+        vapeoutState.ballVelocityY *= -1;
+  }
   if(vapeoutState.ballcurY > vapeoutState.paddlecurY){
     resetBall();
     vapeoutState.playing = 0;
   }
+
+  vapeoutState.ballcurX += vapeoutState.ballVelocityX;
+  vapeoutState.ballcurY += vapeoutState.ballVelocityY;
 
 }
 void checkBrickColission(struct levelDesc *lvl){
@@ -186,7 +188,13 @@ void checkBrickColission(struct levelDesc *lvl){
                vapeoutState.ballcurY == y){
                 lvl->layout[row] = mask & ~(1 << ((lvl->width - 1) - col));
                 //reverse ball direction
-                vapeoutState.ballVelocityY *= -1;
+                if(--vapeoutState.bricksLeft != 0){
+                  vapeoutState.ballVelocityY *= -1;
+                }else{
+                  vapeoutState.currentLevel++;
+                  vapeoutState.playing = 0;
+                  return;
+                }
             }
         }
         x+=brickWidth+1;
@@ -216,17 +224,18 @@ void runVapeout(){
           gv.buttonEvent = 0;
       }
 
-      if(vapeoutState.quit == 1){
+      if(vapeoutState.quit == 1 ||
+        vapeoutState.currentLevel > (MAXLEVELS-1)){
         goto gameover;
       }
 
       //drawScreen();
-      drawBricks(&level1Desc);
+      drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
       drawPaddle();
       drawBall();
       if(vapeoutState.playing){
         moveBall();
-        checkBrickColission(&level1Desc);
+        checkBrickColission(&vapeoutState.levels[vapeoutState.currentLevel]);
       }
       Display_Update();
     }
