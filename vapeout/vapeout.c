@@ -54,12 +54,19 @@ struct gameState vapeoutState = { 0 };
 
 struct screen {
   uint8_t top;
+  uint8_t topBrickStart;
   uint8_t left;
   uint8_t right;
   uint8_t bottom;
 };
 
-struct screen Screen = { 10, 1, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1};
+struct screen Screen = {
+  .top = 10,
+  .topBrickStart = 15,
+  .left = 1,
+  .right = DISPLAY_WIDTH - 1,
+  .bottom = DISPLAY_HEIGHT - 1
+};
 
 void initLevels(){
   vapeoutState.levels[0] = level1Desc;
@@ -73,8 +80,8 @@ void resetPaddle(){
 void resetBall(){
   vapeoutState.ballcurX = vapeoutState.paddlecurX + (paddleWidth / 2) - (ballWidth / 2);
   vapeoutState.ballcurY = vapeoutState.paddlecurY - ballHeight;
-  vapeoutState.ballDirection = (rand()%2) * 2 - 1;
-  vapeoutState.ballMagnitude = (drand48()+1);
+  vapeoutState.ballDirection = 1;//(rand()%2) * 2 - 1;
+  vapeoutState.ballMagnitude = (drand48()+1)/5;
   vapeoutState.ballVelocityX = 1;//vapeoutState.ballDirection * vapeoutState.ballMagnitude;
   vapeoutState.ballVelocityY = -1;//0.5;
 }
@@ -150,7 +157,7 @@ struct buttonHandler vapeoutHandler = {
 void drawBricks(struct levelDesc *lvl){
   int row, col;
   uint8_t mask;
-  int x=Screen.left, y=Screen.top;
+  int x=Screen.left, y=Screen.topBrickStart;
   for(row = 0; row < lvl->height; row++){
     x=Screen.left;
     mask = lvl->layout[row];
@@ -165,8 +172,11 @@ void drawBricks(struct levelDesc *lvl){
 }
 
 void moveBall(){
+  vapeoutState.ballcurX += vapeoutState.ballVelocityX;
+  vapeoutState.ballcurY += vapeoutState.ballVelocityY;
 
-  if(vapeoutState.ballcurX > Screen.right || vapeoutState.ballcurX < Screen.left){
+  if(vapeoutState.ballcurX >= Screen.right ||
+     vapeoutState.ballcurX <= Screen.left){
     vapeoutState.ballVelocityX *= -1;
   }
   if((vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
@@ -180,10 +190,6 @@ void moveBall(){
     resetBall();
     vapeoutState.playing = 0;
   }
-
-  vapeoutState.ballcurX += vapeoutState.ballVelocityX;
-  vapeoutState.ballcurY += vapeoutState.ballVelocityY;
-
 }
 void checkBrickCollision(struct levelDesc *lvl){
   int row, col;
@@ -196,7 +202,8 @@ void checkBrickCollision(struct levelDesc *lvl){
         if(mask & ( 1 << (7 - col))){
             if(vapeoutState.ballcurX >= x &&
                vapeoutState.ballcurX <= x + brickWidth &&
-               vapeoutState.ballcurY == y){
+               vapeoutState.ballcurY >= y &&
+               vapeoutState.ballcurY <= y + brickHeight){
                 lvl->layout[row] = mask & ~(1 << ((lvl->width - 1) - col));
                 //reverse ball direction
                 if(--vapeoutState.bricksLeft != 0){
