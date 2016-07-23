@@ -52,11 +52,24 @@ struct gameState {
 
 struct gameState vapeoutState = { 0 };
 
+struct screen {
+  uint8_t top;
+  uint8_t left;
+  uint8_t right;
+  uint8_t bottom;
+};
+
+struct screen Screen = { 10, 1, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1};
+
 void initLevels(){
   vapeoutState.levels[0] = level1Desc;
   vapeoutState.levels[1] = level2Desc;
 }
 
+void resetPaddle(){
+  vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
+  vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
+}
 void resetBall(){
   vapeoutState.ballcurX = vapeoutState.paddlecurX + (paddleWidth / 2) - (ballWidth / 2);
   vapeoutState.ballcurY = vapeoutState.paddlecurY - ballHeight;
@@ -77,9 +90,7 @@ void initVapeout(){
   vapeoutState.score = 0;
   vapeoutState.quit = 0;
 
-  vapeoutState.paddlecurX = ((DISPLAY_WIDTH - paddleWidth) / 2);
-  vapeoutState.paddlecurY = (DISPLAY_HEIGHT - paddleHeight) - 2;
-
+  resetPaddle();
   resetBall();
 }
 
@@ -139,30 +150,30 @@ struct buttonHandler vapeoutHandler = {
 void drawBricks(struct levelDesc *lvl){
   int row, col;
   uint8_t mask;
-  int x=1, y=3;
+  int x=Screen.left, y=Screen.top;
   for(row = 0; row < lvl->height; row++){
-    x=1;
+    x=Screen.left;
     mask = lvl->layout[row];
     for(col = 0; col < lvl->width; col++){
-        if(mask & ( 1 << (7 - col))){
+        if(mask & ( 1 << ((lvl->width - 1) - col))){
             Display_PutPixels(x,y,brick,brickWidth,brickHeight);
         }
-        x+=brickWidth+1;
+        x += brickWidth + 1;
     }
-    y+=brickHeight + 1;
+    y += brickHeight + 1;
   }
 }
 
 void moveBall(){
 
-  if(vapeoutState.ballcurX > (DISPLAY_WIDTH -2) || vapeoutState.ballcurX < 1){
+  if(vapeoutState.ballcurX > Screen.right || vapeoutState.ballcurX < Screen.left){
     vapeoutState.ballVelocityX *= -1;
   }
   if((vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
       vapeoutState.ballcurX <= vapeoutState.paddlecurX + paddleWidth &&
       vapeoutState.ballcurY >= vapeoutState.paddlecurY &&
       vapeoutState.ballcurY <= vapeoutState.paddlecurY + paddleHeight) ||
-      vapeoutState.ballcurY <= 0){
+      vapeoutState.ballcurY <= Screen.top){
         vapeoutState.ballVelocityY *= -1;
   }
   if(vapeoutState.ballcurY > vapeoutState.paddlecurY){
@@ -174,12 +185,12 @@ void moveBall(){
   vapeoutState.ballcurY += vapeoutState.ballVelocityY;
 
 }
-void checkBrickColission(struct levelDesc *lvl){
+void checkBrickCollision(struct levelDesc *lvl){
   int row, col;
-  int x=2, y=3;
+  int x = Screen.left, y = Screen.top;
   uint8_t mask;
   for(row = 0; row < lvl->height; row++){
-    x=2;
+    x = Screen.left;
     mask = lvl->layout[row];
     for(col = 0; col < lvl->width; col++){
         if(mask & ( 1 << (7 - col))){
@@ -189,17 +200,20 @@ void checkBrickColission(struct levelDesc *lvl){
                 lvl->layout[row] = mask & ~(1 << ((lvl->width - 1) - col));
                 //reverse ball direction
                 if(--vapeoutState.bricksLeft != 0){
+                  vapeoutState.score++;
                   vapeoutState.ballVelocityY *= -1;
                 }else{
                   vapeoutState.currentLevel++;
+                  vapeoutState.bricksLeft = vapeoutState.levels[vapeoutState.currentLevel].bricks;
                   vapeoutState.playing = 0;
+                  resetPaddle();
                   return;
                 }
             }
         }
-        x+=brickWidth+1;
+        x += brickWidth + 1;
     }
-    y+=brickHeight + 1;
+    y += brickHeight + 1;
   }
 }
 
@@ -208,8 +222,8 @@ void drawPaddle(){
 }
 
 void drawBall(){
-  if(!vapeoutState.playing) resetBall();
-  Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
+    if(!vapeoutState.playing) resetBall();
+    Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
 }
 
 void runVapeout(){
@@ -235,7 +249,7 @@ void runVapeout(){
       drawBall();
       if(vapeoutState.playing){
         moveBall();
-        checkBrickColission(&vapeoutState.levels[vapeoutState.currentLevel]);
+        checkBrickCollision(&vapeoutState.levels[vapeoutState.currentLevel]);
       }
       Display_Update();
     }
