@@ -251,6 +251,11 @@ void runVapeout(){
       }
 
       //drawScreen();
+      char buff[30];
+      siprintf(buff, "Score:%d  Level:%d",vapeoutState.score, vapeoutState.currentLevel+1);
+      Display_PutText(0,0,buff,FONT_SMALL);
+      Display_PutLine(0, Screen.top, Screen.right, Screen.top);
+
       drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
       drawPaddle();
       drawBall();
