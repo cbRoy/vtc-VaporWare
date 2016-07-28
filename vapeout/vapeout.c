@@ -71,6 +71,7 @@ struct screen Screen = {
 void initLevels(){
   vapeoutState.levels[0] = level1Desc;
   vapeoutState.levels[1] = level2Desc;
+  vapeoutState.levels[2] = level3Desc;
 }
 
 void resetPaddle(){

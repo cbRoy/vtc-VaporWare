@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define MAXROWS 5
-#define MAXLEVELS 2
+#define MAXLEVELS 3
 
 typedef struct levelDesc {
     uint8_t width;
@@ -33,5 +33,17 @@ struct levelDesc level2Desc = {
   //   1111
   //    11
 };
+
+struct levelDesc level3Desc = {
+	.width = 8,
+	.height = 4,
+	.bricks = 24,
+	.layout = { 0xff, 0x55, 0xaa, 0xff }
+	//  11111111
+	//   1 1 1 1
+	//  1 1 1 1
+	//  11111111
+};
+
 
 #endif // VAPEOUT_LEVELS_H
