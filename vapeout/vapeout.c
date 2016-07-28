@@ -193,21 +193,21 @@ void moveBall(){
 }
 void checkBrickCollision(struct levelDesc *lvl){
   int row, col;
-  int x = Screen.left, y = Screen.top;
+  int x = Screen.left, y = Screen.topBrickStart;
   uint8_t mask;
   for(row = 0; row < lvl->height; row++){
     x = Screen.left;
     mask = lvl->layout[row];
     for(col = 0; col < lvl->width; col++){
-        if(mask & ( 1 << (7 - col))){
+        if(mask & ( 1 << ((lvl->width - 1) - col))){
             if(vapeoutState.ballcurX >= x &&
                vapeoutState.ballcurX <= x + brickWidth &&
                vapeoutState.ballcurY >= y &&
                vapeoutState.ballcurY <= y + brickHeight){
                 lvl->layout[row] = mask & ~(1 << ((lvl->width - 1) - col));
                 //reverse ball direction
+                vapeoutState.score++;
                 if(--vapeoutState.bricksLeft != 0){
-                  vapeoutState.score++;
                   vapeoutState.ballVelocityY *= -1;
                 }else{
                   vapeoutState.currentLevel++;
@@ -252,7 +252,7 @@ void runVapeout(){
 
       //drawScreen();
       char buff[30];
-      siprintf(buff, "Score:%d  Level:%d",vapeoutState.score, vapeoutState.currentLevel+1);
+      sniprintf(buff,20, "S:%ld L:%d", vapeoutState.score, vapeoutState.currentLevel+1);
       Display_PutText(0,0,buff,FONT_SMALL);
       Display_PutLine(0, Screen.top, Screen.right, Screen.top);
 
