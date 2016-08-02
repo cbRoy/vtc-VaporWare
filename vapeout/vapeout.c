@@ -44,6 +44,7 @@ struct gameState {
     levelDesc levels[MAXLEVELS];
     uint8_t currentLevel;
     uint8_t bricksLeft;
+    uint8_t lives;
     uint8_t playing;
     uint32_t score;
     uint8_t quit;
@@ -93,6 +94,7 @@ void initVapeout(){
   vapeoutState.currentLevel = 0;
   vapeoutState.bricksLeft = vapeoutState.levels[0].bricks;
   vapeoutState.delay = 100;
+  vapeoutState.lives = 3;
   vapeoutState.playing = 0;
   vapeoutState.currentLevel = 0;
   vapeoutState.score = 0;
@@ -124,7 +126,6 @@ void paddleMoveRight(uint8_t status, uint32_t held) {
         amount = 2;
     }
     if (amount > 0) {
-        // check bounds
         if ((vapeoutState.paddlecurX + amount) < (DISPLAY_WIDTH - paddleWidth)) {
             vapeoutState.paddlecurX += amount;
         }
@@ -181,14 +182,15 @@ void moveBall(){
     vapeoutState.ballVelocityX *= -1;
   }
   if((vapeoutState.ballcurX >= vapeoutState.paddlecurX &&
-      vapeoutState.ballcurX <= vapeoutState.paddlecurX + paddleWidth &&
+      vapeoutState.ballcurX <= (vapeoutState.paddlecurX + paddleWidth) &&
       vapeoutState.ballcurY >= vapeoutState.paddlecurY &&
-      vapeoutState.ballcurY <= vapeoutState.paddlecurY + paddleHeight) ||
+      vapeoutState.ballcurY <= (vapeoutState.paddlecurY + paddleHeight)) ||
       vapeoutState.ballcurY <= Screen.top){
         vapeoutState.ballVelocityY *= -1;
   }
   if(vapeoutState.ballcurY > vapeoutState.paddlecurY){
     resetBall();
+    vapeoutState.lives--;
     vapeoutState.playing = 0;
   }
 }
@@ -225,6 +227,15 @@ void checkBrickCollision(struct levelDesc *lvl){
   }
 }
 
+void drawLives(){
+  uint8_t i;
+  uint8_t x = 50, y = 5;
+  for(i=0; i < vapeoutState.lives; i++){
+    Display_PutPixels(x, y, ball, ballWidth, ballHeight);
+    x -= ballWidth + 2;
+  }
+}
+
 void drawPaddle(){
     Display_PutPixels(vapeoutState.paddlecurX, vapeoutState.paddlecurY, paddle, paddleWidth, paddleHeight);
 }
@@ -247,14 +258,18 @@ void runVapeout(){
       }
 
       if(vapeoutState.quit == 1 ||
-        vapeoutState.currentLevel > (MAXLEVELS-1)){
+        vapeoutState.currentLevel > (MAXLEVELS-1) ||
+        vapeoutState.lives == 0){
         goto gameover;
       }
 
       //drawScreen();
-      char buff[30];
-      sniprintf(buff,20, "S:%ld L:%d", vapeoutState.score, vapeoutState.currentLevel+1);
+      char buff[5];
+      sniprintf(buff,5, "S:%ld", vapeoutState.score);
       Display_PutText(0,0,buff,FONT_SMALL);
+      sniprintf(buff,5, "%d", vapeoutState.currentLevel+1);
+      Display_PutText(55,0,buff,FONT_SMALL);
+      drawLives();
       Display_PutLine(0, Screen.top, Screen.right, Screen.top);
 
       drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
