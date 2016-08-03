@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include "Display.h"
@@ -265,7 +266,7 @@ void runVapeout(){
 
       //drawScreen();
       char buff[5];
-      sniprintf(buff,5, "S:%ld", vapeoutState.score);
+      sniprintf(buff,5, "S:%"PRIu32, vapeoutState.score);
       Display_PutText(0,0,buff,FONT_SMALL);
       sniprintf(buff,5, "%d", vapeoutState.currentLevel+1);
       Display_PutText(55,0,buff,FONT_SMALL);
