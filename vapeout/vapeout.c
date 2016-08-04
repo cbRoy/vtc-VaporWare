@@ -63,12 +63,29 @@ struct screen {
 };
 
 struct screen Screen = {
-  .top = 10,
+  .top = 11,
   .topBrickStart = 15,
   .left = 1,
   .right = DISPLAY_WIDTH - 1,
   .bottom = DISPLAY_HEIGHT - 1
 };
+
+uint8_t vapeoutDecorations[] = {
+
+    //DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,0,0,127, /* Left boarder */
+    //DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 63,0,63,127, /* Right boarder */
+    //DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,127,63,127, /* bottom boarder */
+    COLGROUP, ATTRGROUP, ATTRPADDING, 0, 0, 0, 0,ENDATTRGROUP,
+    DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,12,63,12, /* top line */
+
+    VAPEOUTSCORE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ATTRLOCATION, 2, 0, ENDATTRGROUP,
+    VAPEOUTLIVES, ATTRGROUP, ATTRLOCATION, 40, 4, ENDATTRGROUP,
+    VAPEOUTLEVEL, ATTRGROUP, ATTRLOCATION, 55, 0, ENDATTRGROUP,
+    VAPEOUTFIELD, ATTRGROUP, ATTRLOCATION, 0, 10, ENDATTRGROUP,
+    ENDCOLGROUP,
+    LD
+};
+
 
 void initLevels(){
   vapeoutState.levels[0] = level1Desc;
@@ -228,13 +245,14 @@ void checkBrickCollision(struct levelDesc *lvl){
   }
 }
 
-void drawLives(){
+uint8_t drawLives(void *priv, uint8_t *args, struct layoutProperties *object){
   uint8_t i;
-  uint8_t x = 50, y = 5;
+  uint8_t x = object->X, y = object->Y;
   for(i=0; i < vapeoutState.lives; i++){
     Display_PutPixels(x, y, ball, ballWidth, ballHeight);
     x -= ballWidth + 2;
   }
+  return 0;
 }
 
 void drawPaddle(){
@@ -264,27 +282,86 @@ void runVapeout(){
         goto gameover;
       }
 
-      //drawScreen();
-      char buff[5];
-      sniprintf(buff,5, "S:%"PRIu32, vapeoutState.score);
-      Display_PutText(0,0,buff,FONT_SMALL);
-      sniprintf(buff,5, "%d", vapeoutState.currentLevel+1);
-      Display_PutText(55,0,buff,FONT_SMALL);
-      drawLives();
-      Display_PutLine(0, Screen.top, Screen.right, Screen.top);
-
-      drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
-      drawPaddle();
-      drawBall();
-      if(vapeoutState.playing){
-        moveBall();
-        checkBrickCollision(&vapeoutState.levels[vapeoutState.currentLevel]);
-      }
+      drawScreen(vapeoutDecorations);
       Display_Update();
     }
 gameover:
     returnHandler();
 }
+uint8_t drawVapeout(){
+  drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
+  drawPaddle();
+  drawBall();
+  if(vapeoutState.playing){
+    moveBall();
+    checkBrickCollision(&vapeoutState.levels[vapeoutState.currentLevel]);
+  }
+  return 0;
+}
+void vapeoutScoreText(char *text, uint8_t len) {
+    sniprintf(text, len, "S:%"PRIu32, vapeoutState.score);
+}
+
+struct textPriv vapeoutScore = {
+    .font = FONT_SMALL,
+    .len = 5,
+    .getText = &vapeoutScoreText
+};
+
+const struct displayItem _vapeoutScoreText = {
+    .label = "voscore",
+    .getDimensions = &textGetDimensions,
+    .drawAt = &textDraw,
+    .priv = &vapeoutScore
+};
+
+void vapeoutLevelText(char *text, uint8_t len) {
+    sniprintf(text, len, "%d", vapeoutState.currentLevel + 1);
+}
+
+struct textPriv vapeoutLevel = {
+    .font = FONT_SMALL,
+    .len = 2,
+    .getText = &vapeoutLevelText
+};
+
+const struct displayItem _vapeoutLevelText = {
+    .label = "volevel",
+    .getDimensions = &textGetDimensions,
+    .drawAt = &textDraw,
+    .priv = &vapeoutLevel
+};
+
+
+uint8_t vapeoutLivesGetDimensions(void *priv, uint8_t *args, struct layoutProperties *object) {
+    object->W = 15;
+    object->H = 0;
+    return 0;
+}
+
+const struct displayItem _vapeoutLives = {
+    .label = "volives",
+    .getDimensions = &vapeoutLivesGetDimensions,
+    .drawAt = &drawLives,
+    .args = 0
+};
+
+uint8_t vapeoutGetDimensions(void *priv, uint8_t *args, struct layoutProperties *object) {
+    object->W = 63;
+    object->H = 78;
+    return 0;
+}
+
+const struct displayItem _vapeoutField = {
+  .label = "vofield",
+  .getDimensions = &vapeoutGetDimensions,
+  .drawAt = &drawVapeout,
+  .args = 0
+};
 
 static void __attribute__((constructor)) registerVapeoutDrawables(void) {
+  drawables[VAPEOUTSCORE] = &_vapeoutScoreText;
+  drawables[VAPEOUTLIVES] = &_vapeoutLives;
+  drawables[VAPEOUTLEVEL] = &_vapeoutLevelText;
+  drawables[VAPEOUTFIELD] = &_vapeoutField;
 }
