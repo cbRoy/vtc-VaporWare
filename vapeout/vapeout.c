@@ -63,7 +63,7 @@ struct screen {
 };
 
 struct screen Screen = {
-  .top = 11,
+  .top = 10,
   .topBrickStart = 15,
   .left = 1,
   .right = DISPLAY_WIDTH - 1,
@@ -76,12 +76,13 @@ uint8_t vapeoutDecorations[] = {
     //DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 63,0,63,127, /* Right boarder */
     //DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,127,63,127, /* bottom boarder */
     COLGROUP, ATTRGROUP, ATTRPADDING, 0, 0, 0, 0,ENDATTRGROUP,
-    DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,12,63,12, /* top line */
-
-    VAPEOUTSCORE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ATTRLOCATION, 2, 0, ENDATTRGROUP,
-    VAPEOUTLIVES, ATTRGROUP, ATTRLOCATION, 40, 4, ENDATTRGROUP,
-    VAPEOUTLEVEL, ATTRGROUP, ATTRLOCATION, 55, 0, ENDATTRGROUP,
-    VAPEOUTFIELD, ATTRGROUP, ATTRLOCATION, 0, 10, ENDATTRGROUP,
+      ROWGROUP, ATTRGROUP, ATTRPADDING, 0,0,0,0,ENDATTRGROUP,
+        VAPEOUTSCORE, ATTRGROUP, ATTRLOCATION, 0, 0, ENDATTRGROUP,
+        VAPEOUTLIVES, ATTRGROUP, ATTRLOCATION, 40, 4, ENDATTRGROUP,
+        VAPEOUTLEVEL, ATTRGROUP, ATTRLOCATION, 55, 0, ENDATTRGROUP,
+        DRAWLINE, ATTRGROUP, ATTRALIGN, ABSOLUTE, ENDATTRGROUP, 0,10,63,10, /* top line */
+      ENDROWGROUP,
+      VAPEOUTFIELD, ATTRGROUP, ATTRLOCATION, 0, 10, ENDATTRGROUP,
     ENDCOLGROUP,
     LD
 };
@@ -174,6 +175,31 @@ struct buttonHandler vapeoutHandler = {
 
 };
 
+void runVapeout(){
+    switchHandler(&vapeoutHandler);
+    initVapeout();
+
+    while(1){
+      setupScreen();
+
+      if (gv.buttonEvent) {
+          handleButtonEvents();
+          gv.buttonEvent = 0;
+      }
+
+      if(vapeoutState.quit == 1 ||
+        vapeoutState.currentLevel > (MAXLEVELS-1) ||
+        vapeoutState.lives == 0){
+        goto gameover;
+      }
+
+      drawScreen(vapeoutDecorations);
+      Display_Update();
+    }
+gameover:
+    returnHandler();
+}
+
 void drawBricks(struct levelDesc *lvl){
   int row, col;
   uint8_t mask;
@@ -255,47 +281,17 @@ uint8_t drawLives(void *priv, uint8_t *args, struct layoutProperties *object){
   return 0;
 }
 
-void drawPaddle(){
-    Display_PutPixels(vapeoutState.paddlecurX, vapeoutState.paddlecurY, paddle, paddleWidth, paddleHeight);
-}
-
-void drawBall(){
-    if(!vapeoutState.playing) resetBall();
-    Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
-}
-
-void runVapeout(){
-    switchHandler(&vapeoutHandler);
-    initVapeout();
-
-    while(1){
-      setupScreen();
-
-      if (gv.buttonEvent) {
-          handleButtonEvents();
-          gv.buttonEvent = 0;
-      }
-
-      if(vapeoutState.quit == 1 ||
-        vapeoutState.currentLevel > (MAXLEVELS-1) ||
-        vapeoutState.lives == 0){
-        goto gameover;
-      }
-
-      drawScreen(vapeoutDecorations);
-      Display_Update();
-    }
-gameover:
-    returnHandler();
-}
 uint8_t drawVapeout(){
   drawBricks(&vapeoutState.levels[vapeoutState.currentLevel]);
-  drawPaddle();
-  drawBall();
+  //Draw paddle
+  Display_PutPixels(vapeoutState.paddlecurX, vapeoutState.paddlecurY, paddle, paddleWidth, paddleHeight);
+  //Draw Ball
+  Display_PutPixels(vapeoutState.ballcurX, vapeoutState.ballcurY, ball, ballWidth, ballHeight);
+
   if(vapeoutState.playing){
     moveBall();
     checkBrickCollision(&vapeoutState.levels[vapeoutState.currentLevel]);
-  }
+  }else{ resetBall(); }
   return 0;
 }
 void vapeoutScoreText(char *text, uint8_t len) {
@@ -331,7 +327,6 @@ const struct displayItem _vapeoutLevelText = {
     .drawAt = &textDraw,
     .priv = &vapeoutLevel
 };
-
 
 uint8_t vapeoutLivesGetDimensions(void *priv, uint8_t *args, struct layoutProperties *object) {
     object->W = 15;
